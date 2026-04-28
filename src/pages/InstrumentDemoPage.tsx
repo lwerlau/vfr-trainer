@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ChangeEvent, type FormEvent } from 'react'
 import {
   Airspeed,
   Altimeter,
@@ -26,6 +26,12 @@ function SliderControl({
   value,
   onChange,
 }: SliderControlProps) {
+  const handleValue = (
+    event: ChangeEvent<HTMLInputElement> | FormEvent<HTMLInputElement>,
+  ) => {
+    onChange(Number(event.currentTarget.value))
+  }
+
   return (
     <label className="block">
       <div className="mb-2 flex items-center justify-between gap-4 text-sm">
@@ -42,7 +48,8 @@ function SliderControl({
         max={max}
         step={step}
         value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
+        onChange={handleValue}
+        onInput={handleValue}
       />
     </label>
   )
