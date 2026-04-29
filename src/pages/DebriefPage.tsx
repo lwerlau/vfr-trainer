@@ -97,6 +97,11 @@ export function DebriefPage() {
     <section className="min-h-[calc(100vh-4rem)] bg-[#030712] px-6 py-8 text-slate-100">
       <div className="mx-auto w-full max-w-5xl">
         <header className="mb-6 border-b border-white/10 pb-5">
+          {decision?.action === 'loss_of_control' ? (
+            <div className="mb-5 rounded-lg border border-red-400/60 bg-red-950/60 px-4 py-3 text-center font-mono text-sm font-bold uppercase tracking-[0.24em] text-red-100 shadow-[0_0_28px_rgba(239,68,68,0.25)]">
+              LOSS OF CONTROL IN IMC
+            </div>
+          ) : null}
           <p className="font-mono text-xs uppercase tracking-[0.24em] text-amber-300">
             Post-flight debrief
           </p>

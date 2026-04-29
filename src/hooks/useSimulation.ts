@@ -18,6 +18,25 @@ interface InstrumentState {
   airspeed_kts: number
 }
 
+interface ImcDisorientationState {
+  active: boolean
+  driftPitch: number
+  driftRoll: number
+  secondsInIMC: number
+  lossOfControl: boolean
+}
+
+type RollCorrectionDirection = 'left' | 'right'
+type PitchCorrectionDirection = 'up' | 'down'
+
+const initialImcDisorientation: ImcDisorientationState = {
+  active: false,
+  driftPitch: 0,
+  driftRoll: 0,
+  secondsInIMC: 0,
+  lossOfControl: false,
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
@@ -100,6 +119,67 @@ function routeHeadingForState(
   return fallbackHeading
 }
 
+function getInterpolatedState(states: ScenarioState[], timeOffsetSec: number) {
+  const stateIndex = getStateIndex(states, timeOffsetSec)
+  const baseState = states[stateIndex]
+  const nextState = states[stateIndex + 1]
+
+  return {
+    ...baseState,
+    altitude_ft: interpolateAltitude(baseState, nextState, timeOffsetSec),
+  }
+}
+
+function isInImc(state: ScenarioState) {
+  return state.weather.visibility_sm < 1 || state.weather.ceiling_ft < 1500
+}
+
+function nextDisorientationState(
+  current: ImcDisorientationState,
+  active: boolean,
+  deltaSeconds: number,
+) {
+  if (!active) {
+    return {
+      ...current,
+      active: false,
+      driftPitch: Math.abs(current.driftPitch) < 0.05 ? 0 : current.driftPitch * 0.95,
+      driftRoll: Math.abs(current.driftRoll) < 0.05 ? 0 : current.driftRoll * 0.95,
+      secondsInIMC: 0,
+    }
+  }
+
+  const rollRandomWalk = (Math.random() - 0.5) * 2
+  const pitchRandomWalk = (Math.random() - 0.5) * 2
+  const driftRoll = clamp(
+    current.driftRoll +
+      (rollRandomWalk + 0.3 * current.driftRoll) * 0.05 * (deltaSeconds / 0.1),
+    -90,
+    90,
+  )
+  const driftPitch = clamp(
+    current.driftPitch +
+      (pitchRandomWalk * 0.65 + 0.18 * current.driftPitch) *
+        0.035 *
+        (deltaSeconds / 0.1),
+    -45,
+    45,
+  )
+  const secondsInIMC = current.secondsInIMC + deltaSeconds
+  const lossOfControl =
+    current.lossOfControl ||
+    (secondsInIMC > 3 &&
+      (Math.abs(driftRoll) > 60 || Math.abs(driftPitch) > 30))
+
+  return {
+    active,
+    driftPitch,
+    driftRoll,
+    secondsInIMC,
+    lossOfControl,
+  }
+}
+
 export function useSimulation(
   scenario: Scenario,
   options?: SimulationOptions,
@@ -109,8 +189,11 @@ export function useSimulation(
   isRunning: boolean
   isFinished: boolean
   currentInstruments: InstrumentState
+  imcDisorientation: ImcDisorientationState
   decision: UserDecision | null
   recordDecision: (action: PilotAction) => void
+  correctRoll: (direction: RollCorrectionDirection) => void
+  correctPitch: (direction: PitchCorrectionDirection) => void
   pauseSim: () => void
   resumeSim: () => void
   resetSim: () => void
@@ -120,6 +203,8 @@ export function useSimulation(
   const [isRunning, setIsRunning] = useState(true)
   const [isFinished, setIsFinished] = useState(false)
   const [decision, setDecision] = useState<UserDecision | null>(null)
+  const [imcDisorientation, setImcDisorientation] =
+    useState<ImcDisorientationState>(initialImcDisorientation)
   const decisionRef = useRef<UserDecision | null>(null)
 
   useEffect(() => {
@@ -131,6 +216,7 @@ export function useSimulation(
     setIsRunning(true)
     setIsFinished(false)
     setDecision(null)
+    setImcDisorientation(initialImcDisorientation)
     decisionRef.current = null
   }, [scenario.id])
 
@@ -140,18 +226,8 @@ export function useSimulation(
   )
 
   const currentState = useMemo(() => {
-    const baseState = scenario.states[currentStateIndex]
-    const nextState = scenario.states[currentStateIndex + 1]
-
-    return {
-      ...baseState,
-      altitude_ft: interpolateAltitude(
-        baseState,
-        nextState,
-        currentTimeOffset,
-      ),
-    }
-  }, [currentStateIndex, currentTimeOffset, scenario.states])
+    return getInterpolatedState(scenario.states, currentTimeOffset)
+  }, [currentTimeOffset, scenario.states])
 
   const currentInstruments = useMemo(() => {
     const baseHeading = routeHeadingForState(
@@ -159,10 +235,10 @@ export function useSimulation(
       currentStateIndex,
       scenario.destination.bearing,
     )
-    const pitch =
+    const pitchWobble =
       Math.sin((currentTimeOffset * 2 * Math.PI) / 5.6) * 1.4 +
       Math.sin((currentTimeOffset * 2 * Math.PI) / 4.1) * 0.6
-    const roll =
+    const rollWobble =
       Math.sin((currentTimeOffset * 2 * Math.PI) / 6.8) * 1.5 +
       Math.sin((currentTimeOffset * 2 * Math.PI) / 4.4) * 0.5
     const heading =
@@ -173,8 +249,10 @@ export function useSimulation(
       Math.sin((currentTimeOffset * 2 * Math.PI) / 7.3) * 1
 
     return {
-      pitch,
-      roll,
+      pitch: imcDisorientation.active
+        ? imcDisorientation.driftPitch
+        : pitchWobble,
+      roll: imcDisorientation.active ? imcDisorientation.driftRoll : rollWobble,
       altitude_ft: currentState.altitude_ft,
       heading: normalizeHeading(heading),
       airspeed_kts: airspeed,
@@ -183,6 +261,9 @@ export function useSimulation(
     currentState.altitude_ft,
     currentStateIndex,
     currentTimeOffset,
+    imcDisorientation.active,
+    imcDisorientation.driftPitch,
+    imcDisorientation.driftRoll,
     scenario.destination.bearing,
     scenario.states,
   ])
@@ -206,6 +287,70 @@ export function useSimulation(
     [currentStateIndex, currentTimeOffset],
   )
 
+  const recordLossOfControl = useCallback(
+    (timeOffsetSec: number) => {
+      if (decisionRef.current) {
+        return
+      }
+
+      const lossDecision = {
+        action: 'loss_of_control' as const,
+        time_taken_sec: timeOffsetSec,
+        scenario_state_index: getStateIndex(scenario.states, timeOffsetSec),
+      }
+
+      decisionRef.current = lossDecision
+      setDecision(lossDecision)
+      setIsFinished(true)
+      setIsRunning(false)
+    },
+    [scenario.states],
+  )
+
+  const correctRoll = useCallback((direction: RollCorrectionDirection) => {
+    setImcDisorientation((current) => {
+      if (!current.active || current.lossOfControl) {
+        return current
+      }
+
+      const correction =
+        direction === 'left'
+          ? current.driftRoll > 0
+            ? -8
+            : -4
+          : current.driftRoll < 0
+            ? 8
+            : 4
+
+      return {
+        ...current,
+        driftRoll: clamp(current.driftRoll + correction, -90, 90),
+      }
+    })
+  }, [])
+
+  const correctPitch = useCallback((direction: PitchCorrectionDirection) => {
+    setImcDisorientation((current) => {
+      if (!current.active || current.lossOfControl) {
+        return current
+      }
+
+      const correction =
+        direction === 'up'
+          ? current.driftPitch < 0
+            ? 8
+            : 4
+          : current.driftPitch > 0
+            ? -8
+            : -4
+
+      return {
+        ...current,
+        driftPitch: clamp(current.driftPitch + correction, -45, 45),
+      }
+    })
+  }, [])
+
   const pauseSim = useCallback(() => {
     setIsRunning(false)
   }, [])
@@ -220,6 +365,7 @@ export function useSimulation(
     decisionRef.current = null
     setDecision(null)
     setCurrentTimeOffset(0)
+    setImcDisorientation(initialImcDisorientation)
     setIsFinished(false)
     setIsRunning(true)
   }, [])
@@ -231,10 +377,26 @@ export function useSimulation(
 
     const intervalId = window.setInterval(() => {
       setCurrentTimeOffset((previousOffset) => {
+        const deltaSeconds = (100 * timeMultiplier) / 1000
         const nextOffset = Math.min(
-          previousOffset + (100 * timeMultiplier) / 1000,
+          previousOffset + deltaSeconds,
           scenario.total_duration_sec,
         )
+        const nextState = getInterpolatedState(scenario.states, nextOffset)
+
+        setImcDisorientation((currentDisorientation) => {
+          const nextDisorientation = nextDisorientationState(
+            currentDisorientation,
+            isInImc(nextState),
+            deltaSeconds,
+          )
+
+          if (nextDisorientation.lossOfControl) {
+            recordLossOfControl(nextOffset)
+          }
+
+          return nextDisorientation
+        })
 
         if (nextOffset >= scenario.total_duration_sec) {
           setIsFinished(true)
@@ -263,6 +425,7 @@ export function useSimulation(
   }, [
     isFinished,
     isRunning,
+    recordLossOfControl,
     scenario.states,
     scenario.total_duration_sec,
     timeMultiplier,
@@ -274,8 +437,11 @@ export function useSimulation(
     isRunning,
     isFinished,
     currentInstruments,
+    imcDisorientation,
     decision,
     recordDecision,
+    correctRoll,
+    correctPitch,
     pauseSim,
     resumeSim,
     resetSim,

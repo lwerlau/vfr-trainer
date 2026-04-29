@@ -216,13 +216,13 @@ export const scenarios: Scenario[] = [
         altitude_ft: 7800,
         weather: {
           timestamp: 450,
-          ceiling_ft: 1100,
-          visibility_sm: 3,
+          ceiling_ft: 450,
+          visibility_sm: 1.5,
           wind_dir: 220,
           wind_kts: 22,
           precipitation: 'rain',
           metar:
-            'METAR KGUC 281510Z 22022KT 3SM RA BR OVC011 05/05 A2992',
+            'METAR KGUC 281510Z 22022KT 1 1/2SM RA BR OVC004 05/05 A2992',
         },
         nearest_airports: [
           {
@@ -232,7 +232,7 @@ export const scenarios: Scenario[] = [
             bearing: 72,
             has_ils: false,
             current_metar:
-              'METAR KANK 281510Z 22020KT 3SM RA BR OVC014 06/05 A2994',
+              'METAR KANK 281510Z 22020KT 1 1/2SM RA BR OVC005 06/05 A2994',
           },
           {
             icao: 'KMTJ',
@@ -251,13 +251,13 @@ export const scenarios: Scenario[] = [
         altitude_ft: 7400,
         weather: {
           timestamp: 600,
-          ceiling_ft: 700,
-          visibility_sm: 2,
+          ceiling_ft: 300,
+          visibility_sm: 0.75,
           wind_dir: 220,
           wind_kts: 24,
           precipitation: 'rain',
           metar:
-            'METAR KGUC 281512Z 22024KT 2SM RA BR OVC007 04/04 A2990',
+            'METAR KGUC 281512Z 22024KT 3/4SM RA BR OVC003 04/04 A2990',
         },
         nearest_airports: [
           {
@@ -267,7 +267,7 @@ export const scenarios: Scenario[] = [
             bearing: 245,
             has_ils: true,
             current_metar:
-              'METAR KGUC 281512Z 22024KT 2SM RA BR OVC007 04/04 A2990',
+              'METAR KGUC 281512Z 22024KT 3/4SM RA BR OVC003 04/04 A2990',
           },
           {
             icao: 'KANK',
@@ -276,7 +276,7 @@ export const scenarios: Scenario[] = [
             bearing: 69,
             has_ils: false,
             current_metar:
-              'METAR KANK 281512Z 22022KT 2SM RA BR OVC009 05/05 A2992',
+              'METAR KANK 281512Z 22022KT 3/4SM RA BR OVC004 05/05 A2992',
           },
         ],
       },
@@ -497,13 +497,13 @@ export const scenarios: Scenario[] = [
         altitude_ft: 1900,
         weather: {
           timestamp: 450,
-          ceiling_ft: 900,
-          visibility_sm: 1.75,
+          ceiling_ft: 450,
+          visibility_sm: 1.5,
           wind_dir: 210,
           wind_kts: 13,
           precipitation: 'mist',
           metar:
-            'METAR KALN 281510Z 21013KT 1 3/4SM BR OVC009 17/16 A2990',
+            'METAR KALN 281510Z 21013KT 1 1/2SM BR OVC004 17/16 A2990',
         },
         nearest_airports: [
           {
@@ -513,7 +513,7 @@ export const scenarios: Scenario[] = [
             bearing: 220,
             has_ils: true,
             current_metar:
-              'METAR KALN 281510Z 21013KT 1 3/4SM BR OVC009 17/16 A2990',
+              'METAR KALN 281510Z 21013KT 1 1/2SM BR OVC004 17/16 A2990',
           },
           {
             icao: 'KIJX',
@@ -532,13 +532,13 @@ export const scenarios: Scenario[] = [
         altitude_ft: 1600,
         weather: {
           timestamp: 540,
-          ceiling_ft: 700,
-          visibility_sm: 1.25,
+          ceiling_ft: 300,
+          visibility_sm: 0.75,
           wind_dir: 220,
           wind_kts: 14,
           precipitation: 'mist',
           metar:
-            'METAR KSTL 281512Z 22014KT 1 1/4SM BR OVC007 17/16 A2989',
+            'METAR KSTL 281512Z 22014KT 3/4SM BR OVC003 17/16 A2989',
         },
         nearest_airports: [
           {
@@ -548,7 +548,7 @@ export const scenarios: Scenario[] = [
             bearing: 218,
             has_ils: true,
             current_metar:
-              'METAR KSTL 281512Z 22014KT 1 1/4SM BR OVC007 17/16 A2989',
+              'METAR KSTL 281512Z 22014KT 3/4SM BR OVC003 17/16 A2989',
           },
           {
             icao: 'KIJX',
@@ -822,13 +822,13 @@ export const scenarios: Scenario[] = [
         altitude_ft: 3900,
         weather: {
           timestamp: 620,
-          ceiling_ft: 600,
-          visibility_sm: 1.5,
+          ceiling_ft: 450,
+          visibility_sm: 0.75,
           wind_dir: 240,
           wind_kts: 14,
           precipitation: 'rain',
           metar:
-            'METAR KHGR 281512Z 24014KT 1 1/2SM -RA BR OVC006 15/15 A2997',
+            'METAR KHGR 281512Z 24014KT 3/4SM -RA BR OVC004 15/15 A2997',
         },
         nearest_airports: [
           {
@@ -838,7 +838,7 @@ export const scenarios: Scenario[] = [
             bearing: 322,
             has_ils: true,
             current_metar:
-              'METAR KHGR 281512Z 24014KT 1 1/2SM -RA BR OVC006 15/15 A2997',
+              'METAR KHGR 281512Z 24014KT 3/4SM -RA BR OVC004 15/15 A2997',
           },
           {
             icao: 'KOKV',
@@ -847,7 +847,7 @@ export const scenarios: Scenario[] = [
             bearing: 224,
             has_ils: false,
             current_metar:
-              'METAR KOKV 281512Z 24012KT 1 3/4SM -RA BR OVC008 15/15 A2998',
+              'METAR KOKV 281512Z 24012KT 3/4SM -RA BR OVC004 15/15 A2998',
           },
         ],
       },
@@ -857,13 +857,13 @@ export const scenarios: Scenario[] = [
         altitude_ft: 3500,
         weather: {
           timestamp: 720,
-          ceiling_ft: 400,
-          visibility_sm: 1,
+          ceiling_ft: 300,
+          visibility_sm: 0.5,
           wind_dir: 250,
           wind_kts: 15,
           precipitation: 'rain',
           metar:
-            'METAR KLNS 281514Z 25015KT 1SM -RA BR OVC004 15/15 A2996',
+            'METAR KLNS 281514Z 25015KT 1/2SM -RA BR OVC003 15/15 A2996',
         },
         nearest_airports: [
           {
@@ -873,7 +873,7 @@ export const scenarios: Scenario[] = [
             bearing: 48,
             has_ils: true,
             current_metar:
-              'METAR KLNS 281514Z 25015KT 1SM -RA BR OVC004 15/15 A2996',
+              'METAR KLNS 281514Z 25015KT 1/2SM -RA BR OVC003 15/15 A2996',
           },
           {
             icao: 'KOKV',
@@ -882,7 +882,7 @@ export const scenarios: Scenario[] = [
             bearing: 228,
             has_ils: false,
             current_metar:
-              'METAR KOKV 281514Z 25012KT 1SM -RA BR OVC006 15/15 A2997',
+              'METAR KOKV 281514Z 25012KT 1/2SM -RA BR OVC003 15/15 A2997',
           },
         ],
       },

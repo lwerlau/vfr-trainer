@@ -29,6 +29,14 @@ interface HoldDecisionButtonProps {
   variant?: 'normal' | 'danger'
 }
 
+interface ImcControlPanelProps {
+  secondsInIMC: number
+  onPitchUp: () => void
+  onPitchDown: () => void
+  onRollLeft: () => void
+  onRollRight: () => void
+}
+
 const decisionLabels: Array<{
   action: PilotAction
   label: string
@@ -127,6 +135,46 @@ function HoldDecisionButton({
   )
 }
 
+function ImcControlPanel({
+  secondsInIMC,
+  onPitchUp,
+  onPitchDown,
+  onRollLeft,
+  onRollRight,
+}: ImcControlPanelProps) {
+  const buttonClass =
+    'rounded-md border border-red-300/50 bg-red-950/80 px-3 py-2 font-mono text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-red-100 shadow-[0_0_18px_rgba(248,113,113,0.22)] transition hover:bg-red-900'
+
+  return (
+    <div className="absolute bottom-32 left-4 z-30 rounded-xl border border-red-400/40 bg-black/80 p-4 shadow-2xl shadow-red-950/50 backdrop-blur">
+      <p className="mb-3 font-mono text-xs uppercase tracking-[0.18em] text-red-200">
+        Time in IMC: {secondsInIMC.toFixed(1)} sec
+      </p>
+      <div className="grid grid-cols-3 gap-2">
+        <span />
+        <button className={buttonClass} type="button" onClick={onPitchUp}>
+          ↑ Pitch Up
+        </button>
+        <span />
+        <button className={buttonClass} type="button" onClick={onRollLeft}>
+          ← Roll Left
+        </button>
+        <div className="flex items-center justify-center rounded-md border border-red-400/30 bg-red-950/40 px-2 text-center font-mono text-[0.6rem] uppercase tracking-[0.12em] text-red-200">
+          Level
+        </div>
+        <button className={buttonClass} type="button" onClick={onRollRight}>
+          Roll Right →
+        </button>
+        <span />
+        <button className={buttonClass} type="button" onClick={onPitchDown}>
+          ↓ Pitch Down
+        </button>
+        <span />
+      </div>
+    </div>
+  )
+}
+
 export function SimPage() {
   const location = useLocation()
   const { scenarioId } = (location.state ?? {}) as SimLocationState
@@ -154,8 +202,11 @@ function ActiveSimulation({ scenario }: { scenario: Scenario }) {
     isRunning,
     isFinished,
     currentInstruments,
+    imcDisorientation,
     decision,
     recordDecision,
+    correctRoll,
+    correctPitch,
   } = useSimulation(scenario)
   const hasNavigatedRef = useRef(false)
   const airportsByDistance = useMemo(
@@ -184,6 +235,9 @@ function ActiveSimulation({ scenario }: { scenario: Scenario }) {
     : urgentAmber
       ? 'urgency-border--amber'
       : ''
+  const activeUrgencyClass = imcDisorientation.active
+    ? 'urgency-border--imc'
+    : urgencyClass
   const controlsDisabled = Boolean(decision)
 
   useEffect(() => {
@@ -217,9 +271,62 @@ function ActiveSimulation({ scenario }: { scenario: Scenario }) {
     navigate('/debrief', { state: debriefState })
   }, [decision, navigate, scenario])
 
+  useEffect(() => {
+    if (!imcDisorientation.active || controlsDisabled) {
+      return undefined
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        correctPitch('up')
+      }
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        correctPitch('down')
+      }
+
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault()
+        correctRoll('left')
+      }
+
+      if (event.key === 'ArrowRight') {
+        event.preventDefault()
+        correctRoll('right')
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [
+    controlsDisabled,
+    correctPitch,
+    correctRoll,
+    imcDisorientation.active,
+  ])
+
   return (
     <section className="relative h-[calc(100vh-4rem)] overflow-hidden bg-[#030712] text-slate-100">
-      <div className={`urgency-border ${urgencyClass}`} />
+      <div className={`urgency-border ${activeUrgencyClass}`} />
+
+      {imcDisorientation.active ? (
+        <div className="absolute inset-x-0 top-0 z-40 flex h-9 items-center justify-center border-b border-red-300/50 bg-red-600/95 px-4 text-center font-mono text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_28px_rgba(239,68,68,0.6)]">
+          IMC — REFER TO INSTRUMENTS — KEEP WINGS LEVEL
+        </div>
+      ) : null}
+
+      {imcDisorientation.active && !controlsDisabled ? (
+        <ImcControlPanel
+          secondsInIMC={imcDisorientation.secondsInIMC}
+          onPitchDown={() => correctPitch('down')}
+          onPitchUp={() => correctPitch('up')}
+          onRollLeft={() => correctRoll('left')}
+          onRollRight={() => correctRoll('right')}
+        />
+      ) : null}
 
       <div className="grid h-full grid-rows-[60px_minmax(0,1fr)_80px_120px]">
         <header className="grid h-[60px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border-b border-white/10 bg-black px-4">

@@ -28,6 +28,7 @@ export const pilotActionSchema = z.enum([
   'divert',
   'declare_emergency',
   'request_popup_ifr',
+  'loss_of_control',
 ]) satisfies z.ZodType<PilotAction>
 
 export const airportSchema = z.object({

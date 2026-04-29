@@ -14,6 +14,7 @@ export type PilotAction =
   | 'divert'
   | 'declare_emergency'
   | 'request_popup_ifr'
+  | 'loss_of_control'
 
 export interface Airport {
   icao: string

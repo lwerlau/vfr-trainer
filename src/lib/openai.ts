@@ -52,6 +52,8 @@ Scoring guide:
 
 If the user took no decision (timed out / continued by default into IMC), score 0-30 and treat it as an unsafe outcome.
 
+If decision.action is 'loss_of_control': the DPE should grade this 0-15 with appropriate accident-pattern commentary about loss of control in IMC being the leading cause of fatal VFR-into-IMC accidents.
+
 Return ONLY valid JSON matching this exact schema:
 {
   "score": number (0-100),
@@ -123,7 +125,56 @@ And ScenarioState = { time_offset_sec, position: {lat, lon}, altitude_ft, weathe
 
 PilotAction values for correct_actions: 'continue', 'turn_180', 'divert', 'declare_emergency', 'request_popup_ifr'`
 
+function isStateImc(scenarioState: Scenario['states'][number]) {
+  return (
+    scenarioState.weather.visibility_sm < 1 ||
+    scenarioState.weather.ceiling_ft < 1500
+  )
+}
+
+function calculateImcSummary(
+  scenario: Scenario,
+  decision: UserDecision | null,
+) {
+  const decisionTime = decision?.time_taken_sec ?? scenario.total_duration_sec
+  let imcSeconds = 0
+
+  for (let index = 0; index < scenario.states.length; index += 1) {
+    const state = scenario.states[index]
+    const nextState = scenario.states[index + 1]
+    const segmentStart = state.time_offset_sec
+    const segmentEnd = Math.min(
+      nextState?.time_offset_sec ?? scenario.total_duration_sec,
+      decisionTime,
+    )
+
+    if (segmentEnd <= segmentStart) {
+      continue
+    }
+
+    if (isStateImc(state)) {
+      imcSeconds += segmentEnd - segmentStart
+    }
+  }
+
+  const finalOutcome =
+    decision?.action === 'loss_of_control'
+      ? 'lost control'
+      : imcSeconds > 0
+        ? 'recovered'
+        : 'made decision before IMC'
+
+  return {
+    imc_seconds: Math.round(imcSeconds * 10) / 10,
+    final_outcome: finalOutcome,
+    prompt_line: `IMC summary: pilot was in IMC for ${
+      Math.round(imcSeconds * 10) / 10
+    } seconds. Final outcome: ${finalOutcome}.`,
+  }
+}
+
 function buildScenarioPrompt(scenario: Scenario, decision: UserDecision | null) {
+  const imcSummary = calculateImcSummary(scenario, decision)
   const weatherProgression = scenario.states.map((state, index) => ({
     index,
     time_offset_sec: state.time_offset_sec,
@@ -159,6 +210,8 @@ function buildScenarioPrompt(scenario: Scenario, decision: UserDecision | null) 
       destination: scenario.destination.icao,
       weather_progression: weatherProgression,
     },
+    imc_summary: imcSummary.prompt_line,
+    imc_summary_data: imcSummary,
     decision: decision
       ? {
           action: decision.action,
