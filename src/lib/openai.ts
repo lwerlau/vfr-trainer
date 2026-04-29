@@ -95,7 +95,9 @@ CRITICAL REQUIREMENTS:
    - Wind typically increases as fronts approach.
    - Temperature/dew point spread narrows as conditions deteriorate.
 
-4. Generate 6-8 ScenarioStates over 8-12 minutes total simulated time (480-720 seconds total_duration_sec).
+4. Generate 6-8 ScenarioStates over 75-120 seconds total simulated time (75-120 total_duration_sec).
+
+Time scale: scenarios are compressed for demonstration. Weather progression that would normally take 10 minutes is compressed to about 90 seconds. Generate 6-8 ScenarioStates spaced roughly every 10-15 seconds.
 
 5. Place a clear decision_window on one of the middle states (typically state 3 or 4) marking when the right call should be obvious to a competent pilot.
 
@@ -116,7 +118,7 @@ Return ONLY valid JSON matching this exact schema (no markdown, no commentary):
   "pilot_experience": "student" | "private_vfr" | "private_ifr_current",
   "failure_mode": string (1-2 sentences),
   "ntsb_basis": string (1-2 sentences),
-  "total_duration_sec": number (480-720),
+  "total_duration_sec": number (75-120),
   "states": ScenarioState[]
 }
 

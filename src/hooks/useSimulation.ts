@@ -377,9 +377,10 @@ export function useSimulation(
 
     const intervalId = window.setInterval(() => {
       setCurrentTimeOffset((previousOffset) => {
-        const deltaSeconds = (100 * timeMultiplier) / 1000
+        const realDeltaSeconds = 0.1
+        const simDeltaSeconds = realDeltaSeconds * timeMultiplier
         const nextOffset = Math.min(
-          previousOffset + deltaSeconds,
+          previousOffset + simDeltaSeconds,
           scenario.total_duration_sec,
         )
         const nextState = getInterpolatedState(scenario.states, nextOffset)
@@ -388,7 +389,7 @@ export function useSimulation(
           const nextDisorientation = nextDisorientationState(
             currentDisorientation,
             isInImc(nextState),
-            deltaSeconds,
+            realDeltaSeconds,
           )
 
           if (nextDisorientation.lossOfControl) {

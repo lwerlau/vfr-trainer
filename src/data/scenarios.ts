@@ -28,7 +28,7 @@ export const scenarios: Scenario[] = [
       'Pilot continues into a box canyon as lowering ceilings force the airplane below surrounding terrain.',
     ntsb_basis:
       'Represents the common VFR-into-IMC accident pattern in mountainous terrain: continued visual flight into lowering cloud bases, reduced maneuvering room, and controlled flight into terrain risk.',
-    total_duration_sec: 600,
+    total_duration_sec: 90,
     states: [
       {
         time_offset_sec: 0,
@@ -66,7 +66,7 @@ export const scenarios: Scenario[] = [
         ],
       },
       {
-        time_offset_sec: 90,
+        time_offset_sec: 14,
         position: { lat: 38.754, lon: -106.202 },
         altitude_ft: 9800,
         weather: {
@@ -101,7 +101,7 @@ export const scenarios: Scenario[] = [
         ],
       },
       {
-        time_offset_sec: 180,
+        time_offset_sec: 27,
         position: { lat: 38.676, lon: -106.302 },
         altitude_ft: 9300,
         weather: {
@@ -136,7 +136,7 @@ export const scenarios: Scenario[] = [
         ],
       },
       {
-        time_offset_sec: 270,
+        time_offset_sec: 41,
         position: { lat: 38.604, lon: -106.398 },
         altitude_ft: 8900,
         weather: {
@@ -176,7 +176,7 @@ export const scenarios: Scenario[] = [
         },
       },
       {
-        time_offset_sec: 360,
+        time_offset_sec: 54,
         position: { lat: 38.548, lon: -106.502 },
         altitude_ft: 8300,
         weather: {
@@ -211,7 +211,7 @@ export const scenarios: Scenario[] = [
         ],
       },
       {
-        time_offset_sec: 450,
+        time_offset_sec: 68,
         position: { lat: 38.5, lon: -106.61 },
         altitude_ft: 7800,
         weather: {
@@ -246,7 +246,7 @@ export const scenarios: Scenario[] = [
         ],
       },
       {
-        time_offset_sec: 600,
+        time_offset_sec: 90,
         position: { lat: 38.47, lon: -106.79 },
         altitude_ft: 7400,
         weather: {
@@ -309,7 +309,7 @@ export const scenarios: Scenario[] = [
       'Pilot presses toward the destination as visibility drops below 3 miles instead of diverting to a closer airport still reporting VFR.',
     ntsb_basis:
       'Represents the repeated accident pattern where destination pressure and plan-continuation bias lead VFR pilots deeper into marginal weather despite usable alternates nearby.',
-    total_duration_sec: 540,
+    total_duration_sec: 90,
     states: [
       {
         time_offset_sec: 0,
@@ -347,7 +347,7 @@ export const scenarios: Scenario[] = [
         ],
       },
       {
-        time_offset_sec: 90,
+        time_offset_sec: 15,
         position: { lat: 39.754, lon: -89.13 },
         altitude_ft: 3300,
         weather: {
@@ -382,7 +382,7 @@ export const scenarios: Scenario[] = [
         ],
       },
       {
-        time_offset_sec: 180,
+        time_offset_sec: 30,
         position: { lat: 39.674, lon: -89.418 },
         altitude_ft: 3000,
         weather: {
@@ -417,7 +417,7 @@ export const scenarios: Scenario[] = [
         ],
       },
       {
-        time_offset_sec: 270,
+        time_offset_sec: 45,
         position: { lat: 39.585, lon: -89.726 },
         altitude_ft: 2700,
         weather: {
@@ -457,18 +457,18 @@ export const scenarios: Scenario[] = [
         },
       },
       {
-        time_offset_sec: 360,
+        time_offset_sec: 60,
         position: { lat: 39.49, lon: -90.02 },
         altitude_ft: 2300,
         weather: {
           timestamp: 360,
-          ceiling_ft: 1100,
+          ceiling_ft: 1600,
           visibility_sm: 2.5,
           wind_dir: 210,
           wind_kts: 12,
           precipitation: 'mist',
           metar:
-            'METAR KALN 281508Z 21012KT 2 1/2SM BR OVC011 17/16 A2991',
+            'METAR KALN 281508Z 21012KT 2 1/2SM BR OVC016 17/16 A2991',
         },
         nearest_airports: [
           {
@@ -487,12 +487,12 @@ export const scenarios: Scenario[] = [
             bearing: 229,
             has_ils: true,
             current_metar:
-              'METAR KALN 281508Z 21012KT 2 1/2SM BR OVC011 17/16 A2991',
+              'METAR KALN 281508Z 21012KT 2 1/2SM BR OVC016 17/16 A2991',
           },
         ],
       },
       {
-        time_offset_sec: 450,
+        time_offset_sec: 75,
         position: { lat: 39.258, lon: -90.19 },
         altitude_ft: 1900,
         weather: {
@@ -527,7 +527,7 @@ export const scenarios: Scenario[] = [
         ],
       },
       {
-        time_offset_sec: 540,
+        time_offset_sec: 90,
         position: { lat: 38.978, lon: -90.372 },
         altitude_ft: 1600,
         weather: {
@@ -590,7 +590,7 @@ export const scenarios: Scenario[] = [
       'Pilot waits until IMC closes both ahead and behind, leaving no practical VFR alternate as fuel planning becomes a concern.',
     ntsb_basis:
       'Represents accidents and serious incidents where pilots delay asking ATC for help during unforecast weather deterioration until options are limited by IMC and fuel.',
-    total_duration_sec: 720,
+    total_duration_sec: 90,
     states: [
       {
         time_offset_sec: 0,
@@ -628,7 +628,7 @@ export const scenarios: Scenario[] = [
         ],
       },
       {
-        time_offset_sec: 100,
+        time_offset_sec: 13,
         position: { lat: 38.428, lon: -78.253 },
         altitude_ft: 5500,
         weather: {
@@ -663,7 +663,7 @@ export const scenarios: Scenario[] = [
         ],
       },
       {
-        time_offset_sec: 200,
+        time_offset_sec: 25,
         position: { lat: 38.71, lon: -78.04 },
         altitude_ft: 5300,
         weather: {
@@ -698,7 +698,7 @@ export const scenarios: Scenario[] = [
         ],
       },
       {
-        time_offset_sec: 300,
+        time_offset_sec: 38,
         position: { lat: 38.986, lon: -77.828 },
         altitude_ft: 5000,
         weather: {
@@ -747,7 +747,7 @@ export const scenarios: Scenario[] = [
         },
       },
       {
-        time_offset_sec: 400,
+        time_offset_sec: 50,
         position: { lat: 39.264, lon: -77.62 },
         altitude_ft: 4700,
         weather: {
@@ -782,18 +782,18 @@ export const scenarios: Scenario[] = [
         ],
       },
       {
-        time_offset_sec: 500,
+        time_offset_sec: 63,
         position: { lat: 39.498, lon: -77.396 },
         altitude_ft: 4300,
         weather: {
           timestamp: 500,
-          ceiling_ft: 900,
+          ceiling_ft: 1600,
           visibility_sm: 2.5,
           wind_dir: 240,
           wind_kts: 12,
           precipitation: 'rain',
           metar:
-            'METAR KFDK 281510Z 24012KT 2 1/2SM -RA BR OVC009 16/15 A2998',
+            'METAR KFDK 281510Z 24012KT 2 1/2SM -RA BR OVC016 16/15 A2998',
         },
         nearest_airports: [
           {
@@ -803,7 +803,7 @@ export const scenarios: Scenario[] = [
             bearing: 87,
             has_ils: true,
             current_metar:
-              'METAR KFDK 281510Z 24012KT 2 1/2SM -RA BR OVC009 16/15 A2998',
+              'METAR KFDK 281510Z 24012KT 2 1/2SM -RA BR OVC016 16/15 A2998',
           },
           {
             icao: 'KOKV',
@@ -812,12 +812,12 @@ export const scenarios: Scenario[] = [
             bearing: 222,
             has_ils: false,
             current_metar:
-              'METAR KOKV 281510Z 24011KT 2SM -RA BR OVC010 16/15 A2999',
+              'METAR KOKV 281510Z 24011KT 2SM -RA BR OVC015 16/15 A2999',
           },
         ],
       },
       {
-        time_offset_sec: 620,
+        time_offset_sec: 78,
         position: { lat: 39.716, lon: -77.15 },
         altitude_ft: 3900,
         weather: {
@@ -852,7 +852,7 @@ export const scenarios: Scenario[] = [
         ],
       },
       {
-        time_offset_sec: 720,
+        time_offset_sec: 90,
         position: { lat: 39.936, lon: -76.858 },
         altitude_ft: 3500,
         weather: {
