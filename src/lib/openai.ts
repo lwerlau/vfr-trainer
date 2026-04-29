@@ -1,4 +1,4 @@
-import { debriefSchema } from './zodSchemas'
+import { debriefSchema, scenarioSchema } from './zodSchemas'
 import type { Debrief, Scenario, UserDecision } from '../types/scenario'
 
 type ChatRole = 'system' | 'user' | 'assistant'
@@ -17,6 +17,23 @@ interface ChatCompletionResponse {
   error?: {
     message?: string
   }
+}
+
+export interface GenerateScenarioParams {
+  region:
+    | 'pacific_northwest'
+    | 'rocky_mountain'
+    | 'northeast'
+    | 'southeast'
+    | 'midwest'
+    | 'southwest'
+  difficulty: 'student' | 'private_vfr' | 'private_ifr_current'
+  failure_mode_preference:
+    | 'random'
+    | 'scud_running'
+    | 'get_there_itis'
+    | 'unforecast_imc'
+    | 'marginal_night_vfr'
 }
 
 const SYSTEM_PROMPT = `You are a Designated Pilot Examiner (DPE) grading a VFR pilot's aeronautical decision-making against the FAA PAVE checklist (Pilot, Aircraft, enVironment, External pressures) and the 5P model (Plan, Plane, Pilot, Passengers, Programming).
@@ -45,6 +62,66 @@ Return ONLY valid JSON matching this exact schema:
 }
 
 The timeline should have 3-5 events covering: scenario start, key trend recognition moment, the decision window, the user's actual decision, and outcome.`
+
+const SCENARIO_GENERATOR_SYSTEM_PROMPT = `You are an aviation safety expert generating realistic VFR-into-IMC training scenarios based on real NTSB accident patterns. You will generate a complete training scenario in JSON format.
+
+CRITICAL REQUIREMENTS:
+
+1. Use REAL US airports with correct ICAO codes. Verify the codes are real airports in the requested region. Examples by region:
+   - Pacific Northwest: KSEA, KPDX, KBLI, KHQM, KAST, KOLM, KFHR
+   - Rocky Mountain: KGUC, KASE, KEGE, KAEJ, KMTJ, KCOS, KAPA
+   - Northeast: KBDR, KOXC, KHPN, KPVD, KLEB, KBED, KBAF
+   - Southeast: KCHA, KAVL, KGSP, KAGS, KMCN, KCSG
+   - Midwest: KDEC, KSPI, KIJX, KCMI, KIND, KCID, KDSM
+   - Southwest: KFLG, KGCN, KPRC, KSAF, KABQ, KFMN
+
+2. METARs must be in correct FAA format that pilots can actually parse:
+   Format: METAR ICAO DDHHMMZ WIND VISIBILITY [WEATHER] CLOUDS TEMP/DEW ALTIMETER
+   Examples:
+   - METAR KORE 281453Z 24015KT 3SM BR OVC008 12/11 A2987
+   - METAR KAEJ 281500Z VRB05KT 10SM SCT080 BKN110 09/M01 A3002
+   - METAR KGUC 281512Z 22024KT 1 1/2SM RA BR OVC005 04/04 A2990
+   Visibility under 1 mile uses fractions: '1/2SM', '3/4SM'
+   Visibility 1+ uses whole + fraction: '1 1/2SM', '2 1/2SM'
+   Wind calm: '00000KT'. Wind variable under 6kts: 'VRB05KT'
+   Cloud layers: SKC, FEW###, SCT###, BKN###, OVC### where ### is hundreds of feet
+   Altimeter: A followed by 4 digits (no decimal): A2987 means 29.87
+
+3. Weather progression must be realistic:
+   - Ceilings drop gradually over minutes, not seconds. Reasonable rate: 500-1500 ft per minute.
+   - Visibility decreases over multiple states, not in one jump.
+   - Wind typically increases as fronts approach.
+   - Temperature/dew point spread narrows as conditions deteriorate.
+
+4. Generate 6-8 ScenarioStates over 8-12 minutes total simulated time (480-720 seconds total_duration_sec).
+
+5. Place a clear decision_window on one of the middle states (typically state 3 or 4) marking when the right call should be obvious to a competent pilot.
+
+6. Reference the relevant NTSB accident pattern in the ntsb_basis field — describe the pattern in general terms (e.g., 'continued VFR flight into IMC over rising terrain leading to controlled flight into terrain'). Do NOT fabricate specific NTSB case numbers.
+
+7. The failure_mode field describes what the unsafe pilot would do (the trap of the scenario), not the right answer.
+
+8. Pilot experience level affects what decisions are appropriate. For 'student' and 'private_vfr', request_popup_ifr is generally not appropriate. For 'private_ifr_current', it is.
+
+Return ONLY valid JSON matching this exact schema (no markdown, no commentary):
+
+{
+  "id": string (kebab-case, descriptive),
+  "title": string (5-8 words, evocative),
+  "aircraft": "C172",
+  "departure": Airport,
+  "destination": Airport,
+  "pilot_experience": "student" | "private_vfr" | "private_ifr_current",
+  "failure_mode": string (1-2 sentences),
+  "ntsb_basis": string (1-2 sentences),
+  "total_duration_sec": number (480-720),
+  "states": ScenarioState[]
+}
+
+Where Airport = { icao, name, distance_nm, bearing, has_ils, current_metar }
+And ScenarioState = { time_offset_sec, position: {lat, lon}, altitude_ft, weather: {timestamp, ceiling_ft, visibility_sm, wind_dir, wind_kts, precipitation, metar}, nearest_airports: Airport[], decision_window?: {correct_actions, rationale} }
+
+PilotAction values for correct_actions: 'continue', 'turn_180', 'divert', 'declare_emergency', 'request_popup_ifr'`
 
 function buildScenarioPrompt(scenario: Scenario, decision: UserDecision | null) {
   const weatherProgression = scenario.states.map((state, index) => ({
@@ -96,7 +173,12 @@ function buildScenarioPrompt(scenario: Scenario, decision: UserDecision | null) 
   return JSON.stringify(payload, null, 2)
 }
 
-async function requestDebrief(messages: ChatMessage[], apiKey: string) {
+async function requestChatCompletion(
+  messages: ChatMessage[],
+  apiKey: string,
+  model: 'gpt-4o-mini' | 'gpt-4o',
+  failureMessage: string,
+) {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -104,7 +186,7 @@ async function requestDebrief(messages: ChatMessage[], apiKey: string) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model,
       response_format: { type: 'json_object' },
       messages,
     }),
@@ -113,7 +195,7 @@ async function requestDebrief(messages: ChatMessage[], apiKey: string) {
   const data = (await response.json()) as ChatCompletionResponse
 
   if (!response.ok) {
-    throw new Error(data.error?.message ?? 'OpenAI grading request failed.')
+    throw new Error(data.error?.message ?? failureMessage)
   }
 
   const content = data.choices?.[0]?.message?.content
@@ -123,6 +205,15 @@ async function requestDebrief(messages: ChatMessage[], apiKey: string) {
   }
 
   return content
+}
+
+async function requestDebrief(messages: ChatMessage[], apiKey: string) {
+  return requestChatCompletion(
+    messages,
+    apiKey,
+    'gpt-4o-mini',
+    'OpenAI grading request failed.',
+  )
 }
 
 function parseDebrief(content: string) {
@@ -179,4 +270,74 @@ export async function gradeFlight(
   }
 
   throw new Error('OpenAI grading response failed validation.')
+}
+
+function buildScenarioGeneratorPrompt(params: GenerateScenarioParams) {
+  return JSON.stringify(
+    {
+      task: 'Generate a VFR-into-IMC training scenario matching these parameters.',
+      region: params.region,
+      difficulty: params.difficulty,
+      failure_mode_preference: params.failure_mode_preference,
+    },
+    null,
+    2,
+  )
+}
+
+function parseScenario(content: string) {
+  const parsed = JSON.parse(content) as unknown
+
+  return scenarioSchema.parse(parsed)
+}
+
+export async function generateScenario(
+  params: GenerateScenarioParams,
+): Promise<Scenario> {
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY
+
+  if (!apiKey) {
+    throw new Error('Missing VITE_OPENAI_API_KEY.')
+  }
+
+  const messages: ChatMessage[] = [
+    { role: 'system', content: SCENARIO_GENERATOR_SYSTEM_PROMPT },
+    { role: 'user', content: buildScenarioGeneratorPrompt(params) },
+  ]
+
+  let previousContent = ''
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    previousContent = await requestChatCompletion(
+      messages,
+      apiKey,
+      'gpt-4o',
+      'OpenAI scenario generation request failed.',
+    )
+
+    try {
+      return parseScenario(previousContent)
+    } catch (error) {
+      if (attempt === 1) {
+        throw new Error(
+          error instanceof Error
+            ? `Generated scenario failed validation: ${error.message}`
+            : 'Generated scenario failed validation.',
+        )
+      }
+
+      const validationErrors =
+        error instanceof Error ? error.message : String(error)
+
+      messages.push(
+        { role: 'assistant', content: previousContent },
+        {
+          role: 'user',
+          content: `The generated scenario failed validation. Validation errors: ${validationErrors}. Return ONLY valid JSON matching the exact Scenario schema specified.`,
+        },
+      )
+    }
+  }
+
+  throw new Error('OpenAI scenario generation response failed validation.')
 }

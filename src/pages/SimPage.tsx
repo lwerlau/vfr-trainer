@@ -9,6 +9,7 @@ import {
 } from '../components/instruments'
 import { scenarios } from '../data/scenarios'
 import { useSimulation } from '../hooks/useSimulation'
+import { loadGeneratedScenarios } from '../lib/generatedScenarios'
 import type {
   Airport,
   PilotAction,
@@ -129,7 +130,14 @@ function HoldDecisionButton({
 export function SimPage() {
   const location = useLocation()
   const { scenarioId } = (location.state ?? {}) as SimLocationState
-  const scenario = scenarios.find((candidate) => candidate.id === scenarioId)
+  const generatedScenarios = useMemo(() => loadGeneratedScenarios(), [])
+  const scenario = useMemo(
+    () =>
+      [...scenarios, ...generatedScenarios].find(
+        (candidate) => candidate.id === scenarioId,
+      ),
+    [generatedScenarios, scenarioId],
+  )
 
   if (!scenarioId || !scenario) {
     return <Navigate to="/setup" replace />
