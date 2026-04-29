@@ -95,9 +95,9 @@ CRITICAL REQUIREMENTS:
    - Wind typically increases as fronts approach.
    - Temperature/dew point spread narrows as conditions deteriorate.
 
-4. Generate 6-8 ScenarioStates over approximately 60 seconds total simulated time (50-75 total_duration_sec).
+4. total_duration_sec MUST be 60. Generate exactly 6-8 ScenarioStates spaced roughly every 8-10 seconds within those 60 seconds. Decision window should be on a state at roughly 25-40 seconds in.
 
-Time scale: scenarios are compressed for demonstration. Weather progression that would normally take 10 minutes is compressed to about 60 seconds. Generate 6-8 ScenarioStates spaced roughly every 8-10 seconds.
+Time scale: scenarios are compressed for demonstration. Weather progression that would normally take 10 minutes is compressed to exactly 60 seconds. ABSOLUTE TIME CONSTRAINT: total_duration_sec MUST be exactly 60, the first ScenarioState must start at 0 seconds, and the final ScenarioState must end at 60 seconds.
 
 5. Place a clear decision_window on one of the middle states (typically state 3 or 4) marking when the right call should be obvious to a competent pilot.
 
@@ -118,7 +118,7 @@ Return ONLY valid JSON matching this exact schema (no markdown, no commentary):
   "pilot_experience": "student" | "private_vfr" | "private_ifr_current",
   "failure_mode": string (1-2 sentences),
   "ntsb_basis": string (1-2 sentences),
-  "total_duration_sec": number (50-75),
+  "total_duration_sec": 60,
   "states": ScenarioState[]
 }
 
@@ -343,7 +343,81 @@ function buildScenarioGeneratorPrompt(params: GenerateScenarioParams) {
 function parseScenario(content: string) {
   const parsed = JSON.parse(content) as unknown
 
-  return scenarioSchema.parse(parsed)
+  return scenarioSchema.parse(normalizeGeneratedScenarioTimeline(parsed))
+}
+
+function normalizeGeneratedScenarioTimeline(parsed: unknown) {
+  if (!parsed || typeof parsed !== 'object') {
+    return parsed
+  }
+
+  const candidate = parsed as {
+    total_duration_sec?: unknown
+    states?: unknown
+  }
+
+  if (!Array.isArray(candidate.states)) {
+    return parsed
+  }
+
+  const states = candidate.states
+  const previousTotal =
+    typeof candidate.total_duration_sec === 'number' &&
+    candidate.total_duration_sec > 0
+      ? candidate.total_duration_sec
+      : states.length > 1
+        ? states.length - 1
+        : 60
+  const lastState = states[states.length - 1] as
+    | { time_offset_sec?: unknown }
+    | undefined
+  const needsRescale =
+    candidate.total_duration_sec !== 60 ||
+    lastState?.time_offset_sec !== 60
+  const scale = needsRescale ? 60 / previousTotal : 1
+  const normalizedStates = states.map((state, index) => {
+    if (!state || typeof state !== 'object') {
+      return state
+    }
+
+    const scenarioState = state as {
+      time_offset_sec?: unknown
+      weather?: unknown
+    }
+    const fallbackOffset =
+      states.length > 1 ? Math.round((60 * index) / (states.length - 1)) : 0
+    let timeOffset =
+      typeof scenarioState.time_offset_sec === 'number'
+        ? Math.round(scenarioState.time_offset_sec * scale)
+        : fallbackOffset
+
+    if (index === 0) {
+      timeOffset = 0
+    }
+
+    if (index === states.length - 1) {
+      timeOffset = 60
+    }
+
+    timeOffset = Math.min(Math.max(timeOffset, 0), 60)
+
+    const weather =
+      scenarioState.weather && typeof scenarioState.weather === 'object'
+        ? { ...scenarioState.weather, timestamp: timeOffset }
+        : scenarioState.weather
+
+    return {
+      ...scenarioState,
+      time_offset_sec: timeOffset,
+      weather,
+    }
+  })
+
+  return {
+    ...candidate,
+    total_duration_sec: 60,
+    states: normalizedStates,
+  }
 }
 
 export async function generateScenario(
