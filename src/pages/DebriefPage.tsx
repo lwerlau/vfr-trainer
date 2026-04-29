@@ -38,24 +38,42 @@ export function DebriefPage() {
     routeState && 'decision' in routeState ? routeState.decision : undefined
   const [debrief, setDebrief] = useState<Debrief | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const hasRequestedRef = useRef(false)
+  const requestIdRef = useRef(0)
+
+  console.log('Debrief route state:', {
+    scenarioPresent: Boolean(scenario),
+    decisionPresent: decision !== undefined,
+  })
 
   useEffect(() => {
-    if (!scenario || decision === undefined || hasRequestedRef.current) {
+    if (!scenario || decision === undefined) {
+      console.log('Skipping gradeFlight; missing route state', {
+        scenarioPresent: Boolean(scenario),
+        decisionPresent: decision !== undefined,
+      })
+
       return
     }
 
-    hasRequestedRef.current = true
-    let isActive = true
+    const requestId = requestIdRef.current + 1
+    requestIdRef.current = requestId
+    setDebrief(null)
+    setError(null)
+
+    console.log('calling gradeFlight')
 
     gradeFlight(scenario, decision)
       .then((result) => {
-        if (isActive) {
+        console.log('graded successfully')
+
+        if (requestIdRef.current === requestId) {
           setDebrief(result)
         }
       })
       .catch((caughtError: unknown) => {
-        if (isActive) {
+        console.error('gradeFlight error', caughtError)
+
+        if (requestIdRef.current === requestId) {
           setError(
             caughtError instanceof Error
               ? caughtError.message
@@ -65,7 +83,9 @@ export function DebriefPage() {
       })
 
     return () => {
-      isActive = false
+      if (requestIdRef.current === requestId) {
+        requestIdRef.current += 1
+      }
     }
   }, [decision, scenario])
 

@@ -137,6 +137,8 @@ export async function gradeFlight(
 ): Promise<Debrief> {
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY
 
+  console.log('API key present:', Boolean(apiKey))
+
   if (!apiKey) {
     throw new Error('Missing VITE_OPENAI_API_KEY.')
   }
@@ -149,11 +151,18 @@ export async function gradeFlight(
   let previousContent = ''
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
+    console.log('fetching from OpenAI')
     previousContent = await requestDebrief(messages, apiKey)
 
     try {
-      return parseDebrief(previousContent)
+      const debrief = parseDebrief(previousContent)
+
+      console.log('graded successfully')
+
+      return debrief
     } catch (error) {
+      console.error('gradeFlight parse/validation error', error)
+
       if (attempt === 1) {
         throw error
       }
