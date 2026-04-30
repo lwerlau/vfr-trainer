@@ -111,6 +111,8 @@ Time scale: scenarios are compressed for demonstration. Weather progression that
 
 10. Include lighting appropriate to the scenario. Default to 'day'. Use 'dusk' or 'night' if the failure_mode_preference is 'marginal_night_vfr' or if the scenario is explicitly built around night or low-light VFR conditions.
 
+11. Include initial_fuel_pct based on the scenario pressure. For "low_fuel" or anything implying fuel pressure, use 30-45. For mid-flight scenarios, use 50-70. For early-flight scenarios, use 80-95. Default to 80.
+
 Return ONLY valid JSON matching this exact schema (no markdown, no commentary):
 
 {
@@ -122,6 +124,7 @@ Return ONLY valid JSON matching this exact schema (no markdown, no commentary):
   "pilot_experience": "student" | "private_vfr" | "private_ifr_current",
   "terrain_type": "flat" | "mountains" | "rolling_hills" | "coastal",
   "lighting": "day" | "dusk" | "night" | "dawn",
+  "initial_fuel_pct": number (10-100, percentage fuel on board),
   "failure_mode": string (1-2 sentences),
   "ntsb_basis": string (1-2 sentences),
   "total_duration_sec": 60,
@@ -213,6 +216,7 @@ function buildScenarioPrompt(scenario: Scenario, decision: UserDecision | null) 
       ntsb_basis: scenario.ntsb_basis ?? null,
       aircraft: scenario.aircraft,
       pilot_experience: scenario.pilot_experience,
+      initial_fuel_pct: scenario.initial_fuel_pct ?? 100,
       total_duration_sec: scenario.total_duration_sec,
       departure: scenario.departure.icao,
       destination: scenario.destination.icao,
@@ -451,12 +455,21 @@ function parseScenario(content: string) {
   return scenarioSchema.parse(normalizeGeneratedScenarioTimeline(parsed))
 }
 
+function normalizeInitialFuelPct(value: unknown) {
+  if (typeof value !== 'number' || value < 10 || value > 100) {
+    return 80
+  }
+
+  return Math.round(value)
+}
+
 function normalizeGeneratedScenarioTimeline(parsed: unknown) {
   if (!parsed || typeof parsed !== 'object') {
     return parsed
   }
 
   const candidate = parsed as {
+    initial_fuel_pct?: unknown
     total_duration_sec?: unknown
     states?: unknown
   }
@@ -520,6 +533,7 @@ function normalizeGeneratedScenarioTimeline(parsed: unknown) {
 
   return {
     ...candidate,
+    initial_fuel_pct: normalizeInitialFuelPct(candidate.initial_fuel_pct),
     total_duration_sec: 60,
     states: normalizedStates,
   }

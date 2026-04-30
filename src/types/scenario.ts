@@ -53,6 +53,7 @@ export interface Scenario {
   pilot_experience: 'student' | 'private_vfr' | 'private_ifr_current'
   terrain_type?: TerrainType
   lighting?: Lighting
+  initial_fuel_pct?: number
   failure_mode: string
   ntsb_basis?: string
   states: ScenarioState[]

@@ -34,6 +34,19 @@ const cloudDescriptions: Record<string, string> = {
   OVC: 'overcast',
 }
 
+const c172FuelCapacityGal = 50
+const c172FuelBurnGph = 8
+
+function getInitialFuelPct(scenario: Scenario) {
+  return Math.min(Math.max(scenario.initial_fuel_pct ?? 100, 0), 100)
+}
+
+function formatFuelEndurance(fuelPct: number) {
+  const enduranceHours = (fuelPct / 100) * (c172FuelCapacityGal / c172FuelBurnGph)
+
+  return enduranceHours.toFixed(1)
+}
+
 function parseSignedTemperature(value: string) {
   return Number(value.replace('M', '-'))
 }
@@ -117,6 +130,7 @@ export function PreFlightBriefing({
   const initialMetar =
     scenario.departure.current_metar ?? scenario.states[0]?.weather.metar ?? ''
   const decisionOptions = decisionOptionsByExperience[scenario.pilot_experience]
+  const initialFuelPct = getInitialFuelPct(scenario)
 
   return (
     <div
@@ -185,6 +199,17 @@ export function PreFlightBriefing({
                 </dt>
                 <dd className="mt-1 text-slate-100">
                   {pilotExperienceLabels[scenario.pilot_experience]}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs uppercase tracking-widest text-slate-500">
+                  Fuel On Board
+                </dt>
+                <dd className="mt-1 text-slate-100">
+                  <span className="font-mono text-amber-200">
+                    {initialFuelPct}%
+                  </span>{' '}
+                  Approx. {formatFuelEndurance(initialFuelPct)} hours endurance
                 </dd>
               </div>
             </dl>

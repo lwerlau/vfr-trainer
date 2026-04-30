@@ -85,6 +85,7 @@ export const scenarioSchema = z.object({
   ]),
   terrain_type: terrainTypeSchema.optional(),
   lighting: lightingSchema.optional(),
+  initial_fuel_pct: z.number().min(0).max(100).optional(),
   failure_mode: z.string(),
   ntsb_basis: z.string().optional(),
   states: z.array(scenarioStateSchema),

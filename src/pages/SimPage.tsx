@@ -67,6 +67,10 @@ function getClosestAirport(airports: Airport[]) {
   return [...airports].sort((a, b) => a.distance_nm - b.distance_nm)[0]
 }
 
+function clampFuelPercent(value: number) {
+  return Math.min(Math.max(value, 0), 100)
+}
+
 function HoldDecisionButton({
   action,
   label,
@@ -223,13 +227,22 @@ function ActiveSimulation({ scenario }: { scenario: Scenario }) {
   const [selectedDivertIcao, setSelectedDivertIcao] = useState(
     closestAirport?.icao ?? '',
   )
-  const fuelPercent = Math.max(
-    38,
-    Math.min(
-      100,
-      100 - (currentTimeOffset / scenario.total_duration_sec) * 62,
-    ),
+  const initialFuelPercent = clampFuelPercent(scenario.initial_fuel_pct ?? 100)
+  const fuelProgress = Math.min(
+    Math.max(currentTimeOffset / scenario.total_duration_sec, 0),
+    1,
   )
+  const fuelPercent = Math.max(
+    0,
+    initialFuelPercent - initialFuelPercent * 0.4 * fuelProgress,
+  )
+  const fuelWarning = fuelPercent < 30
+  const fuelCritical = fuelPercent < 15
+  const fuelBarClass = fuelCritical
+    ? 'bg-red-500 shadow-[0_0_14px_rgba(248,113,113,0.55)] animate-pulse'
+    : fuelWarning
+      ? 'bg-red-500 shadow-[0_0_10px_rgba(248,113,113,0.35)]'
+      : 'bg-gradient-to-r from-amber-400 to-emerald-400'
   const currentMetar = closestAirport?.current_metar ?? currentState.weather.metar
   const urgentRed =
     currentState.weather.visibility_sm < 2 || currentState.weather.ceiling_ft < 700
@@ -368,12 +381,20 @@ function ActiveSimulation({ scenario }: { scenario: Scenario }) {
           </div>
 
           <div className="ml-auto flex w-full max-w-48 items-center gap-3">
-            <span className="font-mono text-xs uppercase tracking-widest text-slate-400">
-              Fuel
+            <span
+              className={[
+                'font-mono text-xs uppercase tracking-widest',
+                fuelWarning ? 'text-red-300' : 'text-slate-400',
+              ].join(' ')}
+            >
+              Fuel {Math.round(fuelPercent)}%
             </span>
             <div className="h-3 flex-1 overflow-hidden rounded-full border border-slate-600 bg-slate-950">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-red-500 via-amber-400 to-emerald-400 transition-[width] duration-500"
+                className={[
+                  'h-full rounded-full transition-[width] duration-500',
+                  fuelBarClass,
+                ].join(' ')}
                 style={{ width: `${fuelPercent}%` }}
               />
             </div>
