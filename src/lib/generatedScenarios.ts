@@ -21,9 +21,7 @@ export function loadGeneratedScenarios() {
     const parsed = JSON.parse(storedScenarios) as unknown
 
     return scenarioSchema.array().parse(parsed)
-  } catch (error) {
-    console.error('Failed to load generated scenarios', error)
-
+  } catch {
     return []
   }
 }

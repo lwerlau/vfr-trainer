@@ -77,4 +77,5 @@ export interface Debrief {
   timeline: TimelineEvent[]
   summary: string
   ntsb_comparison?: string
+  grading_source?: 'ai' | 'rule_based'
 }

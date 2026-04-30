@@ -109,4 +109,5 @@ export const debriefSchema = z.object({
   timeline: z.array(timelineEventSchema),
   summary: z.string(),
   ntsb_comparison: z.string().optional(),
+  grading_source: z.enum(['ai', 'rule_based']).optional(),
 }) satisfies z.ZodType<Debrief>

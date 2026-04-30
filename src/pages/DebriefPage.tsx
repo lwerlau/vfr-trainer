@@ -40,18 +40,8 @@ export function DebriefPage() {
   const [error, setError] = useState<string | null>(null)
   const requestIdRef = useRef(0)
 
-  console.log('Debrief route state:', {
-    scenarioPresent: Boolean(scenario),
-    decisionPresent: decision !== undefined,
-  })
-
   useEffect(() => {
     if (!scenario || decision === undefined) {
-      console.log('Skipping gradeFlight; missing route state', {
-        scenarioPresent: Boolean(scenario),
-        decisionPresent: decision !== undefined,
-      })
-
       return
     }
 
@@ -60,19 +50,13 @@ export function DebriefPage() {
     setDebrief(null)
     setError(null)
 
-    console.log('calling gradeFlight')
-
     gradeFlight(scenario, decision)
       .then((result) => {
-        console.log('graded successfully')
-
         if (requestIdRef.current === requestId) {
           setDebrief(result)
         }
       })
       .catch((caughtError: unknown) => {
-        console.error('gradeFlight error', caughtError)
-
         if (requestIdRef.current === requestId) {
           setError(
             caughtError instanceof Error
@@ -139,6 +123,12 @@ export function DebriefPage() {
 
         {debrief ? (
           <div className="grid gap-5">
+            {debrief.grading_source === 'rule_based' ? (
+              <div className="rounded-lg border border-amber-300/40 bg-amber-400/10 px-4 py-3 font-mono text-xs uppercase tracking-[0.16em] text-amber-200">
+                AI grading unavailable — using rule-based assessment
+              </div>
+            ) : null}
+
             <section className="grid gap-4 rounded-lg border border-white/10 bg-slate-950 p-5 sm:grid-cols-[12rem_minmax(0,1fr)]">
               <div>
                 <p className="font-mono text-xs uppercase tracking-[0.22em] text-slate-500">

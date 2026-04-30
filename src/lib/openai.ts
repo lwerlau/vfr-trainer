@@ -283,16 +283,115 @@ function parseDebrief(content: string) {
   return debriefSchema.parse(parsed)
 }
 
+function formatPilotAction(action: string) {
+  return action.replaceAll('_', ' ')
+}
+
+function getDecisionWindow(scenario: Scenario) {
+  const foundIndex = scenario.states.findIndex((state) => state.decision_window)
+  const fallbackIndex = Math.max(0, Math.floor(scenario.states.length / 2))
+  const index = foundIndex >= 0 ? foundIndex : fallbackIndex
+
+  return {
+    index,
+    state: scenario.states[index],
+  }
+}
+
+function buildRuleBasedDebrief(
+  scenario: Scenario,
+  decision: UserDecision | null,
+): Debrief {
+  const decisionWindow = getDecisionWindow(scenario)
+  const correctActions =
+    decisionWindow.state?.decision_window?.correct_actions ?? []
+  const isCorrectAction = decision
+    ? correctActions.includes(decision.action)
+    : false
+
+  let score = 30
+  let decisionQuality: Debrief['decision_quality'] = 'unsafe'
+  let outcomeCommentary =
+    'The selected action did not match the safer options available in the decision window.'
+
+  if (!decision || decision.action === 'loss_of_control') {
+    score = 15
+    decisionQuality = 'unsafe'
+    outcomeCommentary =
+      decision?.action === 'loss_of_control'
+        ? 'The flight ended in loss of control in IMC. That is an unsafe outcome requiring immediate remedial instrument work and earlier weather avoidance.'
+        : 'No timely action was recorded, so the flight is treated as continued VFR into deteriorating conditions.'
+  } else if (
+    isCorrectAction &&
+    decision.scenario_state_index <= decisionWindow.index
+  ) {
+    score = 92
+    decisionQuality = 'excellent'
+    outcomeCommentary =
+      'The decision matched the safer course of action and came before the window closed.'
+  } else if (isCorrectAction) {
+    score = 65
+    decisionQuality = 'late'
+    outcomeCommentary =
+      'The action was directionally correct, but it came after options were already closing.'
+  }
+
+  const trendState =
+    scenario.states[Math.max(0, Math.min(decisionWindow.index - 1, scenario.states.length - 1))] ??
+    scenario.states[0]
+  const decisionTime = decision?.time_taken_sec ?? scenario.total_duration_sec
+  const decisionLabel = decision
+    ? formatPilotAction(decision.action)
+    : 'no action'
+
+  return {
+    score,
+    decision_quality: decisionQuality,
+    grading_source: 'rule_based',
+    timeline: [
+      {
+        time_sec: 0,
+        event: 'Scenario start',
+        commentary: `Departed ${scenario.departure.icao} for ${scenario.destination.icao} with a ${scenario.failure_mode.toLowerCase()}`,
+      },
+      {
+        time_sec: trendState?.time_offset_sec ?? 0,
+        event: 'Weather trend developing',
+        commentary: trendState
+          ? `Ceiling ${trendState.weather.ceiling_ft} ft, visibility ${trendState.weather.visibility_sm} SM, wind ${trendState.weather.wind_dir}/${trendState.weather.wind_kts}. The trend is the hazard.`
+          : 'The weather trend begins to reduce the pilot options.',
+      },
+      {
+        time_sec: decisionWindow.state?.time_offset_sec ?? decisionTime,
+        event: 'Decision window',
+        commentary:
+          decisionWindow.state?.decision_window?.rationale ??
+          'This was the point where a conservative pilot should commit to an escape plan.',
+      },
+      {
+        time_sec: decisionTime,
+        event: 'Pilot decision',
+        commentary: `Pilot outcome: ${decisionLabel}. ${outcomeCommentary}`,
+      },
+    ],
+    summary:
+      decisionQuality === 'excellent'
+        ? `Good aeronautical decision-making. You recognized the trap in time and chose an action that preserved options before ${scenario.failure_mode.toLowerCase()}`
+        : `This was not a safe decision profile. The scenario trap was: ${scenario.failure_mode}`,
+    ntsb_comparison: scenario.ntsb_basis
+      ? `${scenario.ntsb_basis} In the accident record, this pattern usually becomes fatal when pilots delay the first conservative decision until weather, terrain, fuel, or workload leaves no clean exit.`
+      : `This mirrors the broader VFR-into-IMC pattern: pilots continue after the safer decision point, then lose visual references or maneuvering room before they can recover.`,
+  }
+}
+
 export async function gradeFlight(
   scenario: Scenario,
   decision: UserDecision | null,
 ): Promise<Debrief> {
   const apiKey = import.meta.env.VITE_OPENAI_API_KEY
 
-  console.log('API key present:', Boolean(apiKey))
-
   if (!apiKey) {
-    throw new Error('Missing VITE_OPENAI_API_KEY.')
+    return buildRuleBasedDebrief(scenario, decision)
   }
 
   const messages: ChatMessage[] = [
@@ -302,35 +401,35 @@ export async function gradeFlight(
 
   let previousContent = ''
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    console.log('fetching from OpenAI')
-    previousContent = await requestDebrief(messages, apiKey)
+  try {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      previousContent = await requestDebrief(messages, apiKey)
 
-    try {
-      const debrief = parseDebrief(previousContent)
+      try {
+        return {
+          ...parseDebrief(previousContent),
+          grading_source: 'ai',
+        }
+      } catch (error) {
+        if (attempt === 1) {
+          throw error
+        }
 
-      console.log('graded successfully')
-
-      return debrief
-    } catch (error) {
-      console.error('gradeFlight parse/validation error', error)
-
-      if (attempt === 1) {
-        throw error
+        messages.push(
+          { role: 'assistant', content: previousContent },
+          {
+            role: 'user',
+            content:
+              'Your previous response was not valid JSON matching the schema. Return ONLY valid JSON matching the exact schema specified.',
+          },
+        )
       }
-
-      messages.push(
-        { role: 'assistant', content: previousContent },
-        {
-          role: 'user',
-          content:
-            'Your previous response was not valid JSON matching the schema. Return ONLY valid JSON matching the exact schema specified.',
-        },
-      )
     }
+  } catch {
+    return buildRuleBasedDebrief(scenario, decision)
   }
 
-  throw new Error('OpenAI grading response failed validation.')
+  return buildRuleBasedDebrief(scenario, decision)
 }
 
 function buildScenarioGeneratorPrompt(params: GenerateScenarioParams) {

@@ -444,7 +444,7 @@ function ActiveSimulation({ scenario }: { scenario: Scenario }) {
           </div>
         </section>
 
-        <section className="grid min-h-0 grid-cols-[repeat(5,minmax(9rem,1fr))] gap-3 bg-[#05070d] p-3">
+        <section className="grid min-h-0 grid-cols-[repeat(5,minmax(9rem,1fr))] gap-3 overflow-x-auto bg-[#05070d] p-3">
           <HoldDecisionButton
             action="continue"
             disabled={controlsDisabled}
