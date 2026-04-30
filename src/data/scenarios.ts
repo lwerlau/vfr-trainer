@@ -25,6 +25,7 @@ export const scenarios: Scenario[] = [
     },
     pilot_experience: 'private_vfr',
     terrain_type: 'mountains',
+    lighting: 'day',
     failure_mode:
       'Pilot continues into a box canyon as lowering ceilings force the airplane below surrounding terrain.',
     ntsb_basis:
@@ -307,6 +308,7 @@ export const scenarios: Scenario[] = [
     },
     pilot_experience: 'private_vfr',
     terrain_type: 'flat',
+    lighting: 'day',
     failure_mode:
       'Pilot presses toward the destination as visibility drops below 3 miles instead of diverting to a closer airport still reporting VFR.',
     ntsb_basis:
@@ -589,6 +591,7 @@ export const scenarios: Scenario[] = [
     },
     pilot_experience: 'private_ifr_current',
     terrain_type: 'rolling_hills',
+    lighting: 'day',
     failure_mode:
       'Pilot waits until IMC closes both ahead and behind, leaving no practical VFR alternate as fuel planning becomes a concern.',
     ntsb_basis:
@@ -915,6 +918,7 @@ export const scenarios: Scenario[] = [
     },
     pilot_experience: 'student',
     terrain_type: 'coastal',
+    lighting: 'night',
     failure_mode:
       'Pilot continues after sunset as ceilings lower, losing visual references and unable to see terrain or weather features in fading light.',
     ntsb_basis:
@@ -1197,6 +1201,7 @@ export const scenarios: Scenario[] = [
     },
     pilot_experience: 'private_vfr',
     terrain_type: 'mountains',
+    lighting: 'day',
     failure_mode:
       'Pilot presses toward destination with limited fuel reserves as ceilings drop, refusing to divert to a closer field because of the fuel waste, until both fuel and weather options close simultaneously.',
     ntsb_basis:

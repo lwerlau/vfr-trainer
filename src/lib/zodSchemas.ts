@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type {
   Airport,
   Debrief,
+  Lighting,
   PilotAction,
   Scenario,
   ScenarioState,
@@ -18,6 +19,13 @@ export const terrainTypeSchema = z.enum([
   'rolling_hills',
   'coastal',
 ])
+
+export const lightingSchema = z.enum([
+  'day',
+  'dusk',
+  'night',
+  'dawn',
+]) satisfies z.ZodType<Lighting>
 
 export const weatherStateSchema = z.object({
   timestamp: z.number(),
@@ -76,6 +84,7 @@ export const scenarioSchema = z.object({
     'private_ifr_current',
   ]),
   terrain_type: terrainTypeSchema.optional(),
+  lighting: lightingSchema.optional(),
   failure_mode: z.string(),
   ntsb_basis: z.string().optional(),
   states: z.array(scenarioStateSchema),

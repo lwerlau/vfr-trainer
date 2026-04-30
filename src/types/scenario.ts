@@ -18,6 +18,8 @@ export type PilotAction =
 
 export type TerrainType = 'flat' | 'mountains' | 'rolling_hills' | 'coastal'
 
+export type Lighting = 'day' | 'dusk' | 'night' | 'dawn'
+
 export interface Airport {
   icao: string
   name: string
@@ -50,6 +52,7 @@ export interface Scenario {
   destination: Airport
   pilot_experience: 'student' | 'private_vfr' | 'private_ifr_current'
   terrain_type?: TerrainType
+  lighting?: Lighting
   failure_mode: string
   ntsb_basis?: string
   states: ScenarioState[]

@@ -221,8 +221,11 @@ function ActiveSimulation({ scenario }: { scenario: Scenario }) {
     closestAirport?.icao ?? '',
   )
   const fuelPercent = Math.max(
-    0,
-    100 - (currentTimeOffset / scenario.total_duration_sec) * 100,
+    38,
+    Math.min(
+      100,
+      100 - (currentTimeOffset / scenario.total_duration_sec) * 62,
+    ),
   )
   const currentMetar = closestAirport?.current_metar ?? currentState.weather.metar
   const urgentRed =
@@ -361,6 +364,7 @@ function ActiveSimulation({ scenario }: { scenario: Scenario }) {
           <div className="min-h-0 rounded-xl border border-slate-800 bg-slate-950 p-2">
             <OutsideView
               ceiling_ft={currentState.weather.ceiling_ft}
+              lighting={scenario.lighting}
               terrain_type={scenario.terrain_type}
               visibility_sm={currentState.weather.visibility_sm}
             />

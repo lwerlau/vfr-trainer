@@ -1,19 +1,75 @@
-import type { TerrainType } from '../../types/scenario'
+import type { Lighting, TerrainType } from '../../types/scenario'
 
 interface OutsideViewProps {
   visibility_sm: number
   ceiling_ft: number
   terrain_type?: TerrainType
+  lighting?: Lighting
 }
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
 
-function TerrainSilhouette({ terrainType }: { terrainType: TerrainType }) {
+function getBaseBackground(lighting: Lighting) {
+  if (lighting === 'dusk') {
+    return 'linear-gradient(to bottom, #0f172a 0%, #1e1b4b 34%, #8f3f1f 48%, #c46a2b 54%, #322a1e 61%, #132018 100%)'
+  }
+
+  if (lighting === 'night') {
+    return 'linear-gradient(to bottom, #020617 0%, #06101f 48%, #050914 54%, #030604 100%)'
+  }
+
+  if (lighting === 'dawn') {
+    return 'linear-gradient(to bottom, #0b1f3a 0%, #27496d 36%, #d99b9b 51%, #5d513e 59%, #172820 100%)'
+  }
+
+  return 'linear-gradient(to bottom, #2f80c3 0%, #75bce8 45%, #d8be83 52%, #587c42 100%)'
+}
+
+function getTerrainPalette(lighting: Lighting) {
+  if (lighting === 'night') {
+    return {
+      primary: '#07111f',
+      secondary: '#020617',
+      water: '#061522',
+      shoreline: '#1e3a4a',
+      opacityMultiplier: 0.34,
+    }
+  }
+
+  if (lighting === 'dusk' || lighting === 'dawn') {
+    return {
+      primary: '#172033',
+      secondary: '#0f172a',
+      water: '#1f3342',
+      shoreline: '#527081',
+      opacityMultiplier: 0.68,
+    }
+  }
+
+  return {
+    primary: '#273746',
+    secondary: '#1f2937',
+    water: '#294f66',
+    shoreline: '#9cc4d7',
+    opacityMultiplier: 1,
+  }
+}
+
+function TerrainSilhouette({
+  lighting,
+  terrainType,
+}: {
+  lighting: Lighting
+  terrainType: TerrainType
+}) {
   if (terrainType === 'flat') {
     return null
   }
+
+  const palette = getTerrainPalette(lighting)
+  const opacity = palette.opacityMultiplier
 
   if (terrainType === 'mountains') {
     return (
@@ -25,13 +81,13 @@ function TerrainSilhouette({ terrainType }: { terrainType: TerrainType }) {
       >
         <path
           d="M0 62 L6 54 L11 60 L18 45 L24 59 L31 38 L39 61 L46 47 L54 62 L61 41 L70 59 L78 35 L87 60 L94 50 L100 62 L100 100 L0 100 Z"
-          fill="#273746"
-          opacity="0.9"
+          fill={palette.primary}
+          opacity={0.9 * opacity}
         />
         <path
           d="M0 68 L9 60 L17 66 L28 52 L38 67 L49 55 L60 69 L72 57 L82 68 L91 61 L100 69 L100 100 L0 100 Z"
-          fill="#1f2937"
-          opacity="0.82"
+          fill={palette.secondary}
+          opacity={0.82 * opacity}
         />
       </svg>
     )
@@ -47,13 +103,13 @@ function TerrainSilhouette({ terrainType }: { terrainType: TerrainType }) {
       >
         <path
           d="M0 68 C12 58 22 58 34 67 C47 76 59 57 72 64 C84 70 91 62 100 58 L100 100 L0 100 Z"
-          fill="#2f3f45"
-          opacity="0.78"
+          fill={palette.primary}
+          opacity={0.78 * opacity}
         />
         <path
           d="M0 75 C17 67 29 70 43 76 C59 83 73 69 100 73 L100 100 L0 100 Z"
-          fill="#22333b"
-          opacity="0.74"
+          fill={palette.secondary}
+          opacity={0.74 * opacity}
         />
       </svg>
     )
@@ -68,19 +124,19 @@ function TerrainSilhouette({ terrainType }: { terrainType: TerrainType }) {
     >
       <path
         d="M0 67 C16 64 23 66 34 65 C47 64 58 60 70 64 C82 68 91 66 100 64 L100 100 L0 100 Z"
-        fill="#2f4651"
-        opacity="0.58"
+        fill={palette.primary}
+        opacity={0.58 * opacity}
       />
       <path
         d="M0 73 C18 71 36 75 52 72 C70 68 86 71 100 70 L100 100 L0 100 Z"
-        fill="#294f66"
-        opacity="0.52"
+        fill={palette.water}
+        opacity={0.52 * opacity}
       />
       <path
         d="M0 82 C15 80 30 83 46 81 C63 79 80 82 100 80"
         fill="none"
-        stroke="#9cc4d7"
-        strokeOpacity="0.28"
+        stroke={palette.shoreline}
+        strokeOpacity={0.28 * opacity}
         strokeWidth="1"
       />
     </svg>
@@ -91,9 +147,11 @@ export function OutsideView({
   visibility_sm,
   ceiling_ft,
   terrain_type = 'flat',
+  lighting = 'day',
 }: OutsideViewProps) {
   const visibility = clamp(visibility_sm, 0, 10)
   const ceiling = clamp(ceiling_ft, 0, 10000)
+  const baseBackground = getBaseBackground(lighting)
   const hazeOpacity = Math.max(0, Math.min(0.7, ((8 - visibility) / 7) * 0.7))
   const ceilingProgress = clamp((5000 - ceiling) / 4500, 0, 1)
   const cloudTranslateY = -100 + ceilingProgress * 100
@@ -104,7 +162,13 @@ export function OutsideView({
       ? Math.min(visibilityImcProgress, ceilingImcProgress) * 0.95
       : 0
   const horizonOpacity = clamp(1 - hazeOpacity - ceilingProgress * 0.45, 0, 1)
-  const terrainOpacity = clamp(1 - hazeOpacity * 0.9 - imcOpacity, 0, 1)
+  const lowLightHorizonMultiplier =
+    lighting === 'night' ? 0.24 : lighting === 'dusk' || lighting === 'dawn' ? 0.58 : 1
+  const lowLightTerrainMultiplier =
+    lighting === 'night' ? 0.55 : lighting === 'dusk' || lighting === 'dawn' ? 0.82 : 1
+  const terrainOpacity =
+    clamp(1 - hazeOpacity * 0.9 - imcOpacity, 0, 1) *
+    lowLightTerrainMultiplier
 
   return (
     <div
@@ -115,14 +179,18 @@ export function OutsideView({
       <div
         className="absolute inset-0"
         style={{
-          background:
-            'linear-gradient(to bottom, #2f80c3 0%, #75bce8 45%, #d8be83 52%, #587c42 100%)',
+          background: baseBackground,
+          transition: 'background 1000ms ease-out',
         }}
       />
       <div
-        className="absolute inset-x-0 top-[52%] h-px bg-slate-950/70"
+        className="absolute inset-x-0 top-[52%] h-px"
         style={{
-          opacity: horizonOpacity,
+          backgroundColor:
+            lighting === 'night'
+              ? 'rgba(148, 163, 184, 0.24)'
+              : 'rgba(2, 6, 23, 0.7)',
+          opacity: horizonOpacity * lowLightHorizonMultiplier,
           transition: 'opacity 1000ms ease-out',
         }}
       />
@@ -134,7 +202,7 @@ export function OutsideView({
           transition: 'opacity 1000ms ease-out',
         }}
       >
-        <TerrainSilhouette terrainType={terrain_type} />
+        <TerrainSilhouette lighting={lighting} terrainType={terrain_type} />
       </div>
 
       <div
