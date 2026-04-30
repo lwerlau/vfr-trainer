@@ -8,6 +8,7 @@ import type {
 
 interface SimulationOptions {
   time_multiplier?: number
+  auto_start?: boolean
 }
 
 interface InstrumentState {
@@ -199,8 +200,9 @@ export function useSimulation(
   resetSim: () => void
 } {
   const timeMultiplier = options?.time_multiplier ?? 1
+  const shouldAutoStart = options?.auto_start ?? true
   const [currentTimeOffset, setCurrentTimeOffset] = useState(0)
-  const [isRunning, setIsRunning] = useState(true)
+  const [isRunning, setIsRunning] = useState(shouldAutoStart)
   const [isFinished, setIsFinished] = useState(false)
   const [decision, setDecision] = useState<UserDecision | null>(null)
   const [imcDisorientation, setImcDisorientation] =
@@ -213,12 +215,12 @@ export function useSimulation(
 
   useEffect(() => {
     setCurrentTimeOffset(0)
-    setIsRunning(true)
+    setIsRunning(shouldAutoStart)
     setIsFinished(false)
     setDecision(null)
     setImcDisorientation(initialImcDisorientation)
     decisionRef.current = null
-  }, [scenario.id])
+  }, [scenario.id, shouldAutoStart])
 
   const currentStateIndex = useMemo(
     () => getStateIndex(scenario.states, currentTimeOffset),
@@ -367,8 +369,8 @@ export function useSimulation(
     setCurrentTimeOffset(0)
     setImcDisorientation(initialImcDisorientation)
     setIsFinished(false)
-    setIsRunning(true)
-  }, [])
+    setIsRunning(shouldAutoStart)
+  }, [shouldAutoStart])
 
   useEffect(() => {
     if (!isRunning || isFinished) {

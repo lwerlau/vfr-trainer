@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { PreFlightBriefing } from '../components/PreFlightBriefing'
 import {
   Airspeed,
   Altimeter,
@@ -196,6 +197,7 @@ export function SimPage() {
 
 function ActiveSimulation({ scenario }: { scenario: Scenario }) {
   const navigate = useNavigate()
+  const [briefingComplete, setBriefingComplete] = useState(false)
   const {
     currentState,
     currentTimeOffset,
@@ -207,7 +209,8 @@ function ActiveSimulation({ scenario }: { scenario: Scenario }) {
     recordDecision,
     correctRoll,
     correctPitch,
-  } = useSimulation(scenario)
+    resumeSim,
+  } = useSimulation(scenario, { auto_start: false })
   const hasNavigatedRef = useRef(false)
   const airportsByDistance = useMemo(
     () =>
@@ -242,6 +245,15 @@ function ActiveSimulation({ scenario }: { scenario: Scenario }) {
     ? 'urgency-border--imc'
     : urgencyClass
   const controlsDisabled = Boolean(decision)
+
+  const beginFlight = () => {
+    setBriefingComplete(true)
+    resumeSim()
+  }
+
+  const cancelBriefing = () => {
+    navigate('/setup')
+  }
 
   useEffect(() => {
     if (
@@ -314,6 +326,14 @@ function ActiveSimulation({ scenario }: { scenario: Scenario }) {
   return (
     <section className="relative h-[calc(100vh-4rem)] overflow-hidden bg-[#030712] text-slate-100">
       <div className={`urgency-border ${activeUrgencyClass}`} />
+
+      {!briefingComplete ? (
+        <PreFlightBriefing
+          scenario={scenario}
+          onBegin={beginFlight}
+          onCancel={cancelBriefing}
+        />
+      ) : null}
 
       {imcDisorientation.active ? (
         <div className="absolute inset-x-0 top-0 z-40 flex h-9 items-center justify-center border-b border-red-300/50 bg-red-600/95 px-4 text-center font-mono text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[0_0_28px_rgba(239,68,68,0.6)]">
