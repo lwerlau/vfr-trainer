@@ -16,6 +16,8 @@ export type PilotAction =
   | 'request_popup_ifr'
   | 'loss_of_control'
 
+export type TerrainType = 'flat' | 'mountains' | 'rolling_hills' | 'coastal'
+
 export interface Airport {
   icao: string
   name: string
@@ -47,6 +49,7 @@ export interface Scenario {
   departure: Airport
   destination: Airport
   pilot_experience: 'student' | 'private_vfr' | 'private_ifr_current'
+  terrain_type?: TerrainType
   failure_mode: string
   ntsb_basis?: string
   states: ScenarioState[]

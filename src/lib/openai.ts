@@ -107,6 +107,8 @@ Time scale: scenarios are compressed for demonstration. Weather progression that
 
 8. Pilot experience level affects what decisions are appropriate. For 'student' and 'private_vfr', request_popup_ifr is generally not appropriate. For 'private_ifr_current', it is.
 
+9. Include terrain_type appropriate to the region: use 'mountains' for Rocky Mountain and Pacific Northwest, 'flat' for Midwest, 'rolling_hills' or 'coastal' for Northeast/Southeast depending on the route, and 'mountains' or 'flat' for Southwest depending on the specific airports.
+
 Return ONLY valid JSON matching this exact schema (no markdown, no commentary):
 
 {
@@ -116,6 +118,7 @@ Return ONLY valid JSON matching this exact schema (no markdown, no commentary):
   "departure": Airport,
   "destination": Airport,
   "pilot_experience": "student" | "private_vfr" | "private_ifr_current",
+  "terrain_type": "flat" | "mountains" | "rolling_hills" | "coastal",
   "failure_mode": string (1-2 sentences),
   "ntsb_basis": string (1-2 sentences),
   "total_duration_sec": 60,

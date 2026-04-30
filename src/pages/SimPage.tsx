@@ -361,6 +361,7 @@ function ActiveSimulation({ scenario }: { scenario: Scenario }) {
           <div className="min-h-0 rounded-xl border border-slate-800 bg-slate-950 p-2">
             <OutsideView
               ceiling_ft={currentState.weather.ceiling_ft}
+              terrain_type={scenario.terrain_type}
               visibility_sm={currentState.weather.visibility_sm}
             />
           </div>

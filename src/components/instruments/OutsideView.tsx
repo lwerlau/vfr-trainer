@@ -1,13 +1,97 @@
+import type { TerrainType } from '../../types/scenario'
+
 interface OutsideViewProps {
   visibility_sm: number
   ceiling_ft: number
+  terrain_type?: TerrainType
 }
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
 
-export function OutsideView({ visibility_sm, ceiling_ft }: OutsideViewProps) {
+function TerrainSilhouette({ terrainType }: { terrainType: TerrainType }) {
+  if (terrainType === 'flat') {
+    return null
+  }
+
+  if (terrainType === 'mountains') {
+    return (
+      <svg
+        className="absolute inset-0 h-full w-full"
+        preserveAspectRatio="none"
+        viewBox="0 0 100 100"
+        aria-hidden="true"
+      >
+        <path
+          d="M0 62 L6 54 L11 60 L18 45 L24 59 L31 38 L39 61 L46 47 L54 62 L61 41 L70 59 L78 35 L87 60 L94 50 L100 62 L100 100 L0 100 Z"
+          fill="#273746"
+          opacity="0.9"
+        />
+        <path
+          d="M0 68 L9 60 L17 66 L28 52 L38 67 L49 55 L60 69 L72 57 L82 68 L91 61 L100 69 L100 100 L0 100 Z"
+          fill="#1f2937"
+          opacity="0.82"
+        />
+      </svg>
+    )
+  }
+
+  if (terrainType === 'rolling_hills') {
+    return (
+      <svg
+        className="absolute inset-0 h-full w-full"
+        preserveAspectRatio="none"
+        viewBox="0 0 100 100"
+        aria-hidden="true"
+      >
+        <path
+          d="M0 68 C12 58 22 58 34 67 C47 76 59 57 72 64 C84 70 91 62 100 58 L100 100 L0 100 Z"
+          fill="#2f3f45"
+          opacity="0.78"
+        />
+        <path
+          d="M0 75 C17 67 29 70 43 76 C59 83 73 69 100 73 L100 100 L0 100 Z"
+          fill="#22333b"
+          opacity="0.74"
+        />
+      </svg>
+    )
+  }
+
+  return (
+    <svg
+      className="absolute inset-0 h-full w-full"
+      preserveAspectRatio="none"
+      viewBox="0 0 100 100"
+      aria-hidden="true"
+    >
+      <path
+        d="M0 67 C16 64 23 66 34 65 C47 64 58 60 70 64 C82 68 91 66 100 64 L100 100 L0 100 Z"
+        fill="#2f4651"
+        opacity="0.58"
+      />
+      <path
+        d="M0 73 C18 71 36 75 52 72 C70 68 86 71 100 70 L100 100 L0 100 Z"
+        fill="#294f66"
+        opacity="0.52"
+      />
+      <path
+        d="M0 82 C15 80 30 83 46 81 C63 79 80 82 100 80"
+        fill="none"
+        stroke="#9cc4d7"
+        strokeOpacity="0.28"
+        strokeWidth="1"
+      />
+    </svg>
+  )
+}
+
+export function OutsideView({
+  visibility_sm,
+  ceiling_ft,
+  terrain_type = 'flat',
+}: OutsideViewProps) {
   const visibility = clamp(visibility_sm, 0, 10)
   const ceiling = clamp(ceiling_ft, 0, 10000)
   const hazeOpacity = Math.max(0, Math.min(0.7, ((8 - visibility) / 7) * 0.7))
@@ -20,6 +104,7 @@ export function OutsideView({ visibility_sm, ceiling_ft }: OutsideViewProps) {
       ? Math.min(visibilityImcProgress, ceilingImcProgress) * 0.95
       : 0
   const horizonOpacity = clamp(1 - hazeOpacity - ceilingProgress * 0.45, 0, 1)
+  const terrainOpacity = clamp(1 - hazeOpacity * 0.9 - imcOpacity, 0, 1)
 
   return (
     <div
@@ -41,6 +126,16 @@ export function OutsideView({ visibility_sm, ceiling_ft }: OutsideViewProps) {
           transition: 'opacity 1000ms ease-out',
         }}
       />
+
+      <div
+        className="absolute inset-0"
+        style={{
+          opacity: terrainOpacity,
+          transition: 'opacity 1000ms ease-out',
+        }}
+      >
+        <TerrainSilhouette terrainType={terrain_type} />
+      </div>
 
       <div
         className="absolute inset-0"

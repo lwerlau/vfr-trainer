@@ -24,6 +24,7 @@ export const scenarios: Scenario[] = [
         'METAR KGUC 281500Z 23014KT 8SM BKN060 OVC090 07/02 A2998',
     },
     pilot_experience: 'private_vfr',
+    terrain_type: 'mountains',
     failure_mode:
       'Pilot continues into a box canyon as lowering ceilings force the airplane below surrounding terrain.',
     ntsb_basis:
@@ -305,6 +306,7 @@ export const scenarios: Scenario[] = [
         'METAR KSTL 281500Z 20010KT 6SM BR BKN030 18/14 A2994',
     },
     pilot_experience: 'private_vfr',
+    terrain_type: 'flat',
     failure_mode:
       'Pilot presses toward the destination as visibility drops below 3 miles instead of diverting to a closer airport still reporting VFR.',
     ntsb_basis:
@@ -586,6 +588,7 @@ export const scenarios: Scenario[] = [
         'METAR KLNS 281500Z 21008KT 8SM BKN045 18/12 A3003',
     },
     pilot_experience: 'private_ifr_current',
+    terrain_type: 'rolling_hills',
     failure_mode:
       'Pilot waits until IMC closes both ahead and behind, leaving no practical VFR alternate as fuel planning becomes a concern.',
     ntsb_basis:
@@ -911,6 +914,7 @@ export const scenarios: Scenario[] = [
         'METAR KBLI 282030Z 22010KT 7SM BKN035 OVC050 10/08 A2993',
     },
     pilot_experience: 'student',
+    terrain_type: 'coastal',
     failure_mode:
       'Pilot continues after sunset as ceilings lower, losing visual references and unable to see terrain or weather features in fading light.',
     ntsb_basis:
@@ -1192,6 +1196,7 @@ export const scenarios: Scenario[] = [
         'METAR KPRC 281800Z 22012KT 8SM BKN060 OVC090 14/02 A3008',
     },
     pilot_experience: 'private_vfr',
+    terrain_type: 'mountains',
     failure_mode:
       'Pilot presses toward destination with limited fuel reserves as ceilings drop, refusing to divert to a closer field because of the fuel waste, until both fuel and weather options close simultaneously.',
     ntsb_basis:

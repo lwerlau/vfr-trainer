@@ -12,6 +12,13 @@ import type {
 
 export const precipitationSchema = z.enum(['none', 'rain', 'snow', 'mist'])
 
+export const terrainTypeSchema = z.enum([
+  'flat',
+  'mountains',
+  'rolling_hills',
+  'coastal',
+])
+
 export const weatherStateSchema = z.object({
   timestamp: z.number(),
   ceiling_ft: z.number(),
@@ -68,6 +75,7 @@ export const scenarioSchema = z.object({
     'private_vfr',
     'private_ifr_current',
   ]),
+  terrain_type: terrainTypeSchema.optional(),
   failure_mode: z.string(),
   ntsb_basis: z.string().optional(),
   states: z.array(scenarioStateSchema),
